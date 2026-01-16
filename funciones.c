@@ -6,7 +6,9 @@ float LIM_PM25 = 15;
 float LIM_SO2  = 40;
 float LIM_NO2  = 25;
 
-void inicializarZonas(struct Zona zonas[]) {
+/* -------------------------------------------------- */
+
+void inicializarZonas(Zona zonas[]) {
     char nombres[ZONAS][30] = {
         "Centro Historico",
         "Valle de Los Chillos",
@@ -27,7 +29,6 @@ void inicializarZonas(struct Zona zonas[]) {
 }
 
 /* -------------------------------------------------- */
-/* CARGA AUTOMATICA DE 30 DIAS HISTORICOS */
 
 void cargarHistoricoInicial() {
     FILE *f = fopen("historico.dat", "rb");
@@ -37,7 +38,7 @@ void cargarHistoricoInicial() {
     }
 
     f = fopen("historico.dat", "wb");
-    struct RegistroHistorico r;
+    RegistroHistorico r;
 
     float basePM[ZONAS]  = {18, 16, 20, 17, 15};
     float baseSO2[ZONAS] = {30, 28, 35, 32, 27};
@@ -56,9 +57,8 @@ void cargarHistoricoInicial() {
 }
 
 /* -------------------------------------------------- */
-/* OPCION 1 - INGRESO Y MONITOREO ACTUAL */
 
-void ingresarContaminacion(struct Zona zonas[]) {
+void ingresarContaminacion(Zona zonas[]) {
     int z, opc;
 
     do {
@@ -81,7 +81,7 @@ void ingresarContaminacion(struct Zona zonas[]) {
         monitoreoActual(&zonas[z]);
         guardarHistorico(z, zonas[z].actual);
 
-        printf("\n¿Desea ingresar otra zona? (1=Si / 2=No): ");
+        printf("\nDesea ingresar otra zona (1.Si / 2.No): ");
         scanf("%d", &opc);
 
     } while (opc == 1);
@@ -89,7 +89,7 @@ void ingresarContaminacion(struct Zona zonas[]) {
 
 /* -------------------------------------------------- */
 
-void monitoreoActual(struct Zona *z) {
+void monitoreoActual(Zona *z) {
     printf("\nMonitoreo actual - %s\n", z->nombre);
 
     if (z->actual.pm25 > LIM_PM25)
@@ -110,9 +110,9 @@ void monitoreoActual(struct Zona *z) {
 
 /* -------------------------------------------------- */
 
-void guardarHistorico(int zona, struct Contaminacion c) {
+void guardarHistorico(int zona, Contaminacion c) {
     FILE *f = fopen("historico.dat", "ab");
-    struct RegistroHistorico r;
+    RegistroHistorico r;
 
     r.zona = zona;
     r.datos = c;
@@ -122,13 +122,12 @@ void guardarHistorico(int zona, struct Contaminacion c) {
 }
 
 /* -------------------------------------------------- */
-/* OPCION 2 - PREDICCION */
 
-void prediccionFutura(struct Zona zonas[]) {
+void prediccionFutura(Zona zonas[]) {
     int z;
-    struct Clima clima;
+    Clima clima;
     FILE *f = fopen("historico.dat", "rb");
-    struct RegistroHistorico r;
+    RegistroHistorico r;
 
     float pm[DIAS_HIST], so2[DIAS_HIST], no2[DIAS_HIST];
     int cont = 0;
@@ -155,11 +154,11 @@ void prediccionFutura(struct Zona zonas[]) {
         return;
     }
 
-    printf("Temperatura actual (°C): ");
+    printf("Temperatura: ");
     scanf("%f", &clima.temperatura);
-    printf("Velocidad del viento (km/h): ");
+    printf("Viento: ");
     scanf("%f", &clima.viento);
-    printf("Humedad (%%): ");
+    printf("Humedad: ");
     scanf("%f", &clima.humedad);
 
     zonas[z].prediccion.pm25 = pm[cont-1] * (1 + clima.humedad / 200);
@@ -168,7 +167,7 @@ void prediccionFutura(struct Zona zonas[]) {
 
     guardarPrediccion(z, zonas[z].prediccion, clima);
 
-    printf("\nPrediccion de contaminacion (24 horas):\n");
+    printf("\nPrediccion 24 horas:\n");
     printf("PM2.5: %.2f\n", zonas[z].prediccion.pm25);
     printf("SO2: %.2f\n", zonas[z].prediccion.so2);
     printf("NO2: %.2f\n", zonas[z].prediccion.no2);
@@ -176,9 +175,9 @@ void prediccionFutura(struct Zona zonas[]) {
 
 /* -------------------------------------------------- */
 
-void guardarPrediccion(int zona, struct Contaminacion p, struct Clima c) {
+void guardarPrediccion(int zona, Contaminacion p, Clima c) {
     FILE *f = fopen("predicciones.dat", "ab");
-    struct RegistroPrediccion r;
+    RegistroPrediccion r;
 
     r.zona = zona;
     r.prediccion = p;
@@ -189,9 +188,8 @@ void guardarPrediccion(int zona, struct Contaminacion p, struct Clima c) {
 }
 
 /* -------------------------------------------------- */
-/* OPCION 3 - ALERTAS Y RECOMENDACIONES */
 
-void alertasYRecomendaciones(struct Zona zonas[]) {
+void alertasYRecomendaciones(Zona zonas[]) {
     int hayAlerta;
 
     for (int i = 0; i < ZONAS; i++) {
@@ -206,37 +204,39 @@ void alertasYRecomendaciones(struct Zona zonas[]) {
         if (zonas[i].prediccion.no2  > LIM_NO2)  hayAlerta = 1;
 
         if (!hayAlerta)
-            continue;
+            continue;   // NO imprime zonas aceptables
 
-        printf("\nZona: %s\n", zonas[i].nombre);
+        printf("\n================================\n");
+        printf("Zona: %s\n", zonas[i].nombre);
+        printf("================================\n");
 
         if (zonas[i].prediccion.pm25 > LIM_PM25) {
-            printf("PM2.5 elevado:\n");
+            printf("ALERTA PM2.5 (%.2f ug/m3)\n", zonas[i].prediccion.pm25);
             printf("- Usar mascarilla\n");
             printf("- Evitar exposicion prolongada\n");
-            printf("- Suspender actividades al aire libre\n");
+            printf("- Suspender actividades al aire libre\n\n");
         }
 
         if (zonas[i].prediccion.so2 > LIM_SO2) {
-            printf("SO2 elevado:\n");
+            printf("ALERTA SO2 (%.2f ug/m3)\n", zonas[i].prediccion.so2);
             printf("- Reducir trafico vehicular\n");
-            printf("- Control de emisiones industriales\n");
+            printf("- Control de emisiones industriales\n\n");
         }
 
         if (zonas[i].prediccion.no2 > LIM_NO2) {
-            printf("NO2 elevado:\n");
+            printf("ALERTA NO2 (%.2f ug/m3)\n", zonas[i].prediccion.no2);
             printf("- Evitar ejercicio al aire libre\n");
-            printf("- Uso de mascarilla\n");
+            printf("- Uso de mascarilla\n\n");
         }
     }
 }
 
 /* -------------------------------------------------- */
-/* OPCION 4 - PROMEDIOS HISTORICOS */
 
-void promediosHistoricos(struct Zona zonas[]) {
+
+void promediosHistoricos(Zona zonas[]) {
     FILE *f = fopen("historico.dat", "rb");
-    struct RegistroHistorico r;
+    RegistroHistorico r;
 
     float sumaPM[ZONAS] = {0}, sumaSO2[ZONAS] = {0}, sumaNO2[ZONAS] = {0};
     int cont[ZONAS] = {0};
@@ -253,21 +253,23 @@ void promediosHistoricos(struct Zona zonas[]) {
         printf("\nZona: %s\n", zonas[i].nombre);
 
         if (cont[i] == 0) {
-            printf("No hay datos historicos suficientes\n");
+            printf("No hay datos historicos\n");
             continue;
         }
 
-        printf("Prom PM2.5 (ultimos 30 dias): %.2f\n", sumaPM[i] / cont[i]);
-        printf("Prom SO2 (ultimos 30 dias): %.2f\n", sumaSO2[i] / cont[i]);
-        printf("Prom NO2 (ultimos 30 dias): %.2f\n", sumaNO2[i] / cont[i]);
+        printf("PM2.5 promedio (30 dias): %.2f\n", sumaPM[i] / cont[i]);
+        printf("SO2 promedio (30 dias): %.2f\n", sumaSO2[i] / cont[i]);
+        printf("NO2 promedio (30 dias): %.2f\n", sumaNO2[i] / cont[i]);
     }
 }
 
-/* -------------------------------------------------- */
-/* OPCION 5 - REPORTE */
-
-void exportarReporte(struct Zona zonas[]) {
+void exportarReporte(Zona zonas[]) {
     FILE *f = fopen("reporte.txt", "w");
+
+    if (f == NULL) {
+        printf("Error al crear el reporte.\n");
+        return;
+    }
 
     fprintf(f, "REPORTE DE CONTAMINACION DEL AIRE\n");
     fprintf(f, "================================\n\n");
@@ -280,9 +282,17 @@ void exportarReporte(struct Zona zonas[]) {
         fprintf(f, "Zona: %s\n\n", zonas[i].nombre);
 
         fprintf(f, "Contaminacion actual:\n");
-        fprintf(f, "PM2.5: %.2f\n", zonas[i].actual.pm25);
-        fprintf(f, "SO2: %.2f\n", zonas[i].actual.so2);
-        fprintf(f, "NO2: %.2f\n\n", zonas[i].actual.no2);
+        fprintf(f, "PM2.5: %.2f (%s)\n",
+                zonas[i].actual.pm25,
+                zonas[i].actual.pm25 > LIM_PM25 ? "Supera limite OMS" : "Aceptable");
+
+        fprintf(f, "SO2: %.2f (%s)\n",
+                zonas[i].actual.so2,
+                zonas[i].actual.so2 > LIM_SO2 ? "Supera limite OMS" : "Aceptable");
+
+        fprintf(f, "NO2: %.2f (%s)\n\n",
+                zonas[i].actual.no2,
+                zonas[i].actual.no2 > LIM_NO2 ? "Supera limite OMS" : "Aceptable");
 
         fprintf(f, "Prediccion 24 horas:\n");
         fprintf(f, "PM2.5: %.2f\n", zonas[i].prediccion.pm25);
@@ -295,6 +305,5 @@ void exportarReporte(struct Zona zonas[]) {
     fclose(f);
     printf("Reporte exportado correctamente.\n");
 }
-
 
 
