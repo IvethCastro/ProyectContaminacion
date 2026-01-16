@@ -6,9 +6,6 @@ float LIM_PM25 = 15;
 float LIM_SO2  = 40;
 float LIM_NO2  = 25;
 
-/* -------------------------------------------------- */
-/* INICIALIZACION DE ZONAS */
-
 void inicializarZonas(struct Zona zonas[]) {
     char nombres[ZONAS][30] = {
         "Centro Historico",
@@ -298,5 +295,6 @@ void exportarReporte(struct Zona zonas[]) {
     fclose(f);
     printf("Reporte exportado correctamente.\n");
 }
+
 
 
