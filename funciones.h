@@ -5,52 +5,53 @@
 #define ZONAS 5
 #define DIAS_HIST 30
 
-struct Contaminacion {
+typedef struct {
     float pm25;
     float so2;
     float no2;
-};
+} Contaminacion;
 
-struct Clima {
+
+typedef struct {
     float temperatura;
     float viento;
     float humedad;
-};
+} Clima;
 
-struct Zona {
+
+typedef struct {
     char nombre[30];
-    struct Contaminacion actual;
-    struct Contaminacion prediccion;
-    int tieneDatos;   // 0 = no se ingresaron datos actuales, 1 = sí
-};
+    Contaminacion actual;
+    Contaminacion prediccion;
+    int tieneDatos;   
+} Zona;
 
-struct RegistroHistorico {
-    int zona;                       // ID de la zona
-    struct Contaminacion datos;     // contaminacion de ese dia
-};
-
-struct RegistroPrediccion {
+typedef struct {
     int zona;
-    struct Contaminacion prediccion;
-    struct Clima clima;
-};
+    Contaminacion datos;
+} RegistroHistorico;
 
+typedef struct {
+    int zona;
+    Contaminacion prediccion;
+    Clima clima;
+} RegistroPrediccion;
 
-void inicializarZonas(struct Zona zonas[]);
+void inicializarZonas(Zona zonas[]);
 void cargarHistoricoInicial();
 
-void ingresarContaminacion(struct Zona zonas[]);
-void monitoreoActual(struct Zona *z);
-void guardarHistorico(int zona, struct Contaminacion c);
 
-void prediccionFutura(struct Zona zonas[]);
-void guardarPrediccion(int zona, struct Contaminacion p, struct Clima c);
+void ingresarContaminacion(Zona zonas[]);
+void monitoreoActual(Zona *z);
+void guardarHistorico(int zona, Contaminacion c);
 
-void alertasYRecomendaciones(struct Zona zonas[]);
-
-void promediosHistoricos(struct Zona zonas[]);
-
-void exportarReporte(struct Zona zonas[]);
+void prediccionFutura(Zona zonas[]);
+void guardarPrediccion(int zona, Contaminacion p, Clima c);
+void alertasYRecomendaciones(Zona zonas[]);
+void promediosHistoricos(Zona zonas[]);
+void exportarReporte(Zona zonas[]);
 
 #endif
+
+
 
