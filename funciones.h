@@ -1,57 +1,76 @@
 #ifndef FUNCIONES_H
 #define FUNCIONES_H
 
-/* -------- CONSTANTES -------- */
+#define LIM_PM25 15
+#define LIM_SO2 40
+#define LIM_NO2 40
+
+
 #define ZONAS 5
-#define DIAS_HIST 30
+#define DIAS 30
 
 typedef struct {
     float pm25;
     float so2;
     float no2;
+    float co2;
 } Contaminacion;
 
+typedef struct {
+    Contaminacion dias[DIAS];
+} Historial;
 
 typedef struct {
-    float temperatura;
-    float viento;
-    float humedad;
-} Clima;
-
+    Contaminacion valor;
+    float aqi_pm25;
+    float aqi_so2;
+    float aqi_no2;
+} Proyeccion;
 
 typedef struct {
-    char nombre[30];
-    Contaminacion actual;
-    Contaminacion prediccion;
-    int tieneDatos;   
+    char nombre[40];
+    Historial historial;
+    Proyeccion proy;
+    int hayPrediccion;
 } Zona;
 
-typedef struct {
-    int zona;
-    Contaminacion datos;
-} RegistroHistorico;
+/* ================= VALIDACIONES ================= */
 
-typedef struct {
-    int zona;
-    Contaminacion prediccion;
-    Clima clima;
-} RegistroPrediccion;
+int leerEnteroConRango(int inicio, int fin);
+float leerFlotanteConRango(float inicio, float fin);
+
+/* ================= INICIALIZACIÓN Y ARCHIVOS ================= */
 
 void inicializarZonas(Zona zonas[]);
-void cargarHistoricoInicial();
+void cargarDatosHistoricos(Zona zonas[]);
+void guardarDatosHistoricos(Zona zonas[]);
+void guardarPrediccion(Zona zonas[], int id);
 
+/* ================= UTILIDADES ================= */
 
-void ingresarContaminacion(Zona zonas[]);
+void mostrarZonas(Zona zonas[]);
 void monitoreoActual(Zona *z);
-void guardarHistorico(int zona, Contaminacion c);
 
-void prediccionFutura(Zona zonas[]);
-void guardarPrediccion(int zona, Contaminacion p, Clima c);
-void alertasYRecomendaciones(Zona zonas[]);
+float promedioPonderado(float valores[]);
+float factorClimatico(float temp, float viento, float humedad);
+
+const char* interpretacionAQI(float aqi);
+const char* nivelCO2Exterior(float c);
+
+/* ================= AQI ================= */
+
+float calcularAQI(float C, float Clow, float Chigh, float Ilow, float Ihigh);
+float aqiPM25(float c);
+float aqiSO2(float c);
+float aqiNO2(float c);
+
+/* ================= OPCIONES DEL MENÚ ================= */
+
+void ingresarContaminacionActual(Zona zonas[]);
+void prediccion(Zona zonas[], int id);
+void alertasRecomendaciones(Zona zonas[]);
 void promediosHistoricos(Zona zonas[]);
 void exportarReporte(Zona zonas[]);
 
 #endif
-
-
-
+ 
