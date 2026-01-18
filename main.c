@@ -4,35 +4,38 @@
 int main() {
     Zona zonas[ZONAS];
     int opcion;
+    int id;
 
-    /* Inicializacion */
     inicializarZonas(zonas);
-    cargarHistoricoInicial();
+    cargarDatosHistoricos(zonas);
 
     do {
-        printf("\n SISTEMA DE GESTION DE CONTAMINACION\n");
-        printf("====================================\n");
-        printf("1. Ingresar contaminacion actual\n");
-        printf("2. Prediccion de niveles futuros (24h)\n");
+        printf("\n================ MENU =================\n");
+        printf("1. Ingresar y Monitoreo contaminacion actual\n");
+        printf("2. Proyeccion de contaminacion (24h)\n");
         printf("3. Alertas y recomendaciones\n");
         printf("4. Promedios historicos (30 dias)\n");
         printf("5. Exportar reporte\n");
-        printf("6. Salir\n");
+        printf("0. Salir\n");
+        printf("======================================\n");
         printf("Seleccione una opcion: ");
-        scanf("%d", &opcion);
+        opcion = leerEnteroConRango(0, 5);
 
         switch (opcion) {
 
             case 1:
-                ingresarContaminacion(zonas);
+                ingresarContaminacionActual(zonas);
                 break;
 
             case 2:
-                prediccionFutura(zonas);
+                mostrarZonas(zonas);
+                printf("Ingrese ID de la zona: ");
+                id = leerEnteroConRango(0, ZONAS - 1);
+                prediccion(zonas, id);
                 break;
 
             case 3:
-                alertasYRecomendaciones(zonas);
+                alertasRecomendaciones(zonas);
                 break;
 
             case 4:
@@ -43,17 +46,15 @@ int main() {
                 exportarReporte(zonas);
                 break;
 
-            case 6:
+            case 0:
                 printf("Saliendo del sistema...\n");
                 break;
 
             default:
-                printf("Opcion invalida. Intente nuevamente.\n");
+                printf("Opcion invalida.\n");
         }
 
-    } while (opcion != 6);
+    } while (opcion != 0);
 
     return 0;
 }
-
-
