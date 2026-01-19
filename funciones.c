@@ -2,7 +2,6 @@
 #include <string.h>
 #include "funciones.h"
 
-/* ================= VALIDACIONES ================= */
 
 int leerEnteroConRango(int inicio, int fin){
     int num, val;
@@ -29,7 +28,6 @@ float leerFlotanteConRango(float inicio, float fin){
     return num;
 }
 
-/* ================= INICIALIZACIÓN ================= */
 
 void inicializarZonas(Zona zonas[]) {
     char nombres[ZONAS][40] = {
@@ -43,6 +41,9 @@ void inicializarZonas(Zona zonas[]) {
     for (int i = 0; i < ZONAS; i++) {
         strcpy(zonas[i].nombre, nombres[i]);
         zonas[i].hayPrediccion = 0;
+        zonas[i].tieneDatos = 0;
+        zonas[i].tieneClima = 0;
+
     }
 }
 
@@ -79,8 +80,6 @@ void mostrarZonas(Zona zonas[]) {
     }
 }
 
-/* ================= OPCIÓN 1 ================= */
-
 void ingresarContaminacionActual(Zona zonas[]) {
     int id, opc;
     Contaminacion c;
@@ -91,34 +90,51 @@ void ingresarContaminacionActual(Zona zonas[]) {
         printf("Ingrese ID de la zona: ");
         id = leerEnteroConRango(0, ZONAS - 1);
 
-        printf("PM2.5 actual: ");
-        c.pm25 = leerFlotanteConRango(0, 500);
+        /* ----- CONTAMINANTES ----- */
+        printf("PM2.5 actual (0-200 ug/m3): ");
+        c.pm25 = leerFlotanteConRango(0, 200);
 
-        printf("SO2 actual: ");
-        c.so2 = leerFlotanteConRango(0, 500);
+        printf("SO2 actual (0-300 ug/m3): ");
+        c.so2 = leerFlotanteConRango(0, 300);
 
-        printf("NO2 actual: ");
-        c.no2 = leerFlotanteConRango(0, 500);
+        printf("NO2 actual (0-200 ug/m3): ");
+        c.no2 = leerFlotanteConRango(0, 200);
 
-        printf("CO2 actual (350-2000): ");
-        c.co2 = leerFlotanteConRango(350, 2000);
+        printf("CO2 actual (350-600 ppm): ");
+        c.co2 = leerFlotanteConRango(350, 600);
 
-        /* Desplazar historial */
+        /* ----- CLIMA ACTUAL ----- */
+        printf("Temperatura actual (C) (-10 a 40): ");
+        zonas[id].clima.temperatura = leerFlotanteConRango(-10, 40);
+
+        printf("Velocidad del viento (m/s) (0 a 50): ");
+        zonas[id].clima.viento = leerFlotanteConRango(0, 50);
+
+        printf("Humedad relativa (%%) (0 a 100): ");
+        zonas[id].clima.humedad = leerFlotanteConRango(0, 100);
+
+        zonas[id].tieneClima = 1;
+
+        /* ----- DESPLAZAR HISTORIAL (30 DÍAS) ----- */
         for (int i = 0; i < DIAS - 1; i++) {
             zonas[id].historial.dias[i] = zonas[id].historial.dias[i + 1];
         }
         zonas[id].historial.dias[DIAS - 1] = c;
-
+        
+        zonas[id].actual = c;        // Guardar contaminantes actuales
+        zonas[id].tieneDatos = 1;
+        
         guardarDatosHistoricos(zonas);
 
-        /* MONITOREO INMEDIATO */
+        
         monitoreoActual(&zonas[id]);
 
-        printf("\n¿Desea ingresar otra zona? (1. Si / 2. No): ");
+        printf("\nDesea ingresar otra zona? (1. Si / 2. No): ");
         opc = leerEnteroConRango(1, 2);
 
     } while (opc == 1);
 }
+
 
 
 void monitoreoActual(Zona *z) {
@@ -158,8 +174,6 @@ void monitoreoActual(Zona *z) {
         printf("ALERTA: CO2 anomalo para aire exterior (%.0f ppm)\n", c.co2);
     }
 }
-
-
 
 
 /* ================= PREDICCIÓN ================= */
@@ -234,26 +248,22 @@ void guardarPrediccion(Zona zonas[], int id) {
 }
 
 
-void prediccion(Zona zonas[], int id) {
-    float temp, viento, humedad;
+void prediccion(Zona zonas[]) {
+    int id;
     float fc;
 
     float pm25[DIAS], so2[DIAS], no2[DIAS], co2[DIAS];
 
-    /* === 1. INGRESO DE FACTORES CLIMÁTICOS === */
-    printf("\nIngrese temperatura actual (°C) (-10-40): ");
-    temp = leerFlotanteConRango(-10, 40);
+    mostrarZonas(zonas);
+    printf("Ingrese ID de la zona: ");
+    id = leerEnteroConRango(0, ZONAS - 1);
 
-    printf("Ingrese velocidad del viento (m/s) (0-50): ");
-    viento = leerFlotanteConRango(0, 50);
+    fc = factorClimatico(
+            zonas[id].clima.temperatura,
+            zonas[id].clima.viento,
+            zonas[id].clima.humedad
+         );
 
-    printf("Ingrese humedad (%%) (0-100): ");
-    humedad = leerFlotanteConRango(0, 100);
-
-    /* === 2. FACTOR CLIMÁTICO === */
-    fc = factorClimatico(temp, viento, humedad);
-
-    /* === 3. EXTRAER HISTÓRICOS A ARREGLOS === */
     for (int i = 0; i < DIAS; i++) {
         pm25[i] = zonas[id].historial.dias[i].pm25;
         so2[i]  = zonas[id].historial.dias[i].so2;
@@ -261,26 +271,26 @@ void prediccion(Zona zonas[], int id) {
         co2[i]  = zonas[id].historial.dias[i].co2;
     }
 
-    /* === 4. PROMEDIO PONDERADO (ÚLTIMOS 10 DÍAS) === */
+    /* === 3. PROMEDIO PONDERADO (ÚLTIMOS 10 DÍAS) === */
     float pm25_pond = promedioPonderado(pm25);
     float so2_pond  = promedioPonderado(so2);
     float no2_pond  = promedioPonderado(no2);
     float co2_pond  = promedioPonderado(co2);
 
-    /* === 5. PROYECCIÓN AJUSTADA POR CLIMA === */
+    /* === 4. PROYECCIÓN AJUSTADA POR CLIMA === */
     zonas[id].proy.valor.pm25 = pm25_pond * fc;
     zonas[id].proy.valor.so2  = so2_pond  * fc;
     zonas[id].proy.valor.no2  = no2_pond  * fc;
     zonas[id].proy.valor.co2  = co2_pond  * fc;
 
-    /* === 6. AQI === */
+    /* === 5. AQI === */
     zonas[id].proy.aqi_pm25 = aqiPM25(zonas[id].proy.valor.pm25);
     zonas[id].proy.aqi_so2  = aqiSO2(zonas[id].proy.valor.so2);
     zonas[id].proy.aqi_no2  = aqiNO2(zonas[id].proy.valor.no2);
 
-    /* === 7. IMPRESIÓN === */
+    /* === 6. IMPRESIÓN === */
     printf("\nPROYECCION DE CONTAMINACION - %s\n", zonas[id].nombre);
-    printf("Contaminante   Proyeccion (concentracion)       Resultado\n");
+    printf("Contaminante   Proyeccion (concentracion)       Resultado (AQI)\n");
     printf("------------------------------------------------------------\n");
 
     printf("PM2.5          %.2f ug/m3                       %.0f (%s)\n",
@@ -304,76 +314,73 @@ void prediccion(Zona zonas[], int id) {
 
     zonas[id].hayPrediccion = 1;
 
-    /* === 8. GUARDAR PREDICCIÓN EN ARCHIVO === */
+    
     guardarPrediccion(zonas, id);
 }
 
 
-
-void alertasRecomendaciones(Zona zonas[]) {
+void alertasRecomendaciones(Zona zonas[]){
     int hayAlerta;
-
     printf("\n--- ALERTAS Y RECOMENDACIONES ---\n");
 
-    for (int i = 0; i < ZONAS; i++) {
+    for(int i=0;i<ZONAS;i++){
+        if(!zonas[i].hayPrediccion) continue;
 
-        if (!zonas[i].hayPrediccion)
-            continue;
-
-        hayAlerta = 0;
-
-        if (zonas[i].proy.aqi_pm25 > 100) hayAlerta = 1;
-        if (zonas[i].proy.aqi_so2  > 100) hayAlerta = 1;
-        if (zonas[i].proy.aqi_no2  > 100) hayAlerta = 1;
-        if (zonas[i].proy.valor.co2 > 420) hayAlerta = 1;
-
-        if (!hayAlerta)
-            continue;   /* No imprime zonas aceptables */
+        hayAlerta=0;
+        if(zonas[i].proy.aqi_pm25>100) hayAlerta=1;
+        if(zonas[i].proy.aqi_so2>100)  hayAlerta=1;
+        if(zonas[i].proy.aqi_no2>100)  hayAlerta=1;
+        if(zonas[i].proy.valor.co2>420) hayAlerta=1;
+        if(!hayAlerta) continue;
 
         printf("\n================================\n");
         printf("Zona: %s\n", zonas[i].nombre);
         printf("================================\n");
 
-        /* -------- PM2.5 -------- */
-        if (zonas[i].proy.aqi_pm25 > 100) {
+        // -------- PM2.5 --------
+        if(zonas[i].proy.aqi_pm25>100){
             printf("ALERTA PM2.5 (%.2f ug/m3)\n", zonas[i].proy.valor.pm25);
-            printf("- Evitar actividades al aire libre\n");
-            printf("- Uso de mascarilla\n\n");
+            printf("- Global: Reducir emisiones industriales y de vehiculos.\n");
+            printf("- Cultural: Usar mascarilla en espacios abiertos.\n");
+            printf("- Social: Evitar actividades al aire libre.\n");
+            printf("- Ambiental: Controlar fuentes de combustion.\n\n");
         }
 
-        /* -------- SO2 -------- */
-        if (zonas[i].proy.aqi_so2 > 100) {
+        // -------- SO2 --------
+        if(zonas[i].proy.aqi_so2>100){
             printf("ALERTA SO2 (%.2f ug/m3)\n", zonas[i].proy.valor.so2);
-            printf("- Reducir trafico vehicular\n");
-            printf("- Control de emisiones\n\n");
+            printf("- Global: Controlar procesos industriales.\n");
+            printf("- Cultural: Promover uso de energias limpias.\n");
+            printf("- Social: Reducir trafico pesado.\n");
+            printf("- Ambiental: Mitigar focos de emision.\n\n");
         }
 
-        /* -------- NO2 -------- */
-        if (zonas[i].proy.aqi_no2 > 100) {
+        // -------- NO2 --------
+        if(zonas[i].proy.aqi_no2>100){
             printf("ALERTA NO2 (%.2f ug/m3)\n", zonas[i].proy.valor.no2);
-            printf("- Evitar ejercicio al aire libre\n");
-            printf("- Uso de mascarilla\n\n");
+            printf("- Global: Reducir circulacion vehicular.\n");
+            printf("- Cultural: Realizar movilidad sostenible.\n");
+            printf("- Social: Evitar ejercicio al aire libre.\n");
+            printf("- Ambiental: Mejorar ventilación urbana.\n\n");
         }
 
-        /* -------- CO2 -------- */
-        if (zonas[i].proy.valor.co2 > 420 && zonas[i].proy.valor.co2 <= 450) {
-            printf("CO2 ligeramente elevado (%.0f ppm)\n", zonas[i].proy.valor.co2);
-            printf("- Optimizar flujo vehicular\n");
-            printf("- Incrementar vegetacion urbana\n\n");
-        }
-        else if (zonas[i].proy.valor.co2 > 450 && zonas[i].proy.valor.co2 <= 500) {
-            printf("CO2 elevado (%.0f ppm)\n", zonas[i].proy.valor.co2);
-            printf("- Restringir circulacion vehicular\n");
-            printf("- Revisar fuentes emisoras\n\n");
-        }
-        else if (zonas[i].proy.valor.co2 > 500) {
-            printf("CO2 anomalo para aire exterior (%.0f ppm)\n", zonas[i].proy.valor.co2);
-            printf("- Intervenir fuente inmediata\n");
-            printf("- Mejorar ventilacion urbana\n\n");
+        // -------- CO2 --------
+        if(zonas[i].proy.valor.co2>420){
+            if(zonas[i].proy.valor.co2<=450)
+                printf("CO2 ligeramente elevado (%.0f ppm)\n", zonas[i].proy.valor.co2);
+            else if(zonas[i].proy.valor.co2<=500)
+                printf("CO2 elevado (%.0f ppm)\n", zonas[i].proy.valor.co2);
+            else
+                printf("CO2 anomalo para aire exterior (%.0f ppm)\n", zonas[i].proy.valor.co2);
+
+            printf("- Global: Optimizar trafico vehicular.\n");
+            printf("- Cultural: Reducir consumo energetico.\n");
+            printf("- Social: Limitar desplazamientos.\n");
+            printf("- Ambiental: Incrementar areas verdes.\n\n");
         }
     }
-
 }
+
 
 void promediosHistoricos(Zona zonas[]) {
     FILE *f = fopen("historico.dat", "rb");
@@ -417,43 +424,106 @@ void exportarReporte(Zona zonas[]) {
     }
 
     fprintf(f, "=============================================\n");
-    fprintf(f, "        REPORTE DE CALIDAD DEL AIRE\n");
-    fprintf(f, "        Proyeccion 24 horas - Quito\n");
+    fprintf(f, "   REPORTE DE CALIDAD DEL AIRE - QUITO\n");
     fprintf(f, "=============================================\n\n");
 
     for (int i = 0; i < ZONAS; i++) {
 
-        if (!zonas[i].hayPrediccion)
-            continue;
+        Contaminacion actual = zonas[i].historial.dias[DIAS - 1];
 
+        fprintf(f, "---------------------------------------------\n");
         fprintf(f, "Zona: %s\n", zonas[i].nombre);
         fprintf(f, "---------------------------------------------\n");
 
-        fprintf(f, "PM2.5: %.2f ug/m3 | AQI: %.0f (%s)\n",
-                zonas[i].proy.valor.pm25,
-                zonas[i].proy.aqi_pm25,
-                interpretacionAQI(zonas[i].proy.aqi_pm25));
+        fprintf(f, "DATOS ACTUALES:\n");
+        fprintf(f, "PM2.5: %.2f ug/m3\n", actual.pm25);
+        fprintf(f, "SO2:   %.2f ug/m3\n", actual.so2);
+        fprintf(f, "NO2:   %.2f ug/m3\n", actual.no2);
+        fprintf(f, "CO2:   %.0f ppm\n",  actual.co2);
 
-        fprintf(f, "SO2:   %.2f ug/m3 | AQI: %.0f (%s)\n",
-                zonas[i].proy.valor.so2,
-                zonas[i].proy.aqi_so2,
-                interpretacionAQI(zonas[i].proy.aqi_so2));
+        if (!zonas[i].tieneClima) {
+            fprintf(f, "Clima actual (Temperatura, viento y humedad): Aún no se ingresa un dato actual.\n");
+        } else {
+            fprintf(f, "Temperatura: %.1f °C\n", zonas[i].clima.temperatura);
+            fprintf(f, "Viento: %.1f m/s\n", zonas[i].clima.viento);
+            fprintf(f, "Humedad: %.1f %%\n", zonas[i].clima.humedad);
+        }
 
-        fprintf(f, "NO2:   %.2f ug/m3 | AQI: %.0f (%s)\n",
-                zonas[i].proy.valor.no2,
-                zonas[i].proy.aqi_no2,
-                interpretacionAQI(zonas[i].proy.aqi_no2));
 
-        fprintf(f, "CO2:   %.0f ppm | %s\n",
-                zonas[i].proy.valor.co2,
-                nivelCO2Exterior(zonas[i].proy.valor.co2));
+        /* ===== PREDICCIONES ===== */
+        if (zonas[i].hayPrediccion) {
+            fprintf(f, "\nPREDICCIONES:\n");
+
+            fprintf(f, "PM2.5 proyectado: %.2f ug/m3 | AQI: %.0f (%s)\n",
+                    zonas[i].proy.valor.pm25,
+                    zonas[i].proy.aqi_pm25,
+                    interpretacionAQI(zonas[i].proy.aqi_pm25));
+
+            fprintf(f, "SO2 proyectado:   %.2f ug/m3 | AQI: %.0f (%s)\n",
+                    zonas[i].proy.valor.so2,
+                    zonas[i].proy.aqi_so2,
+                    interpretacionAQI(zonas[i].proy.aqi_so2));
+
+            fprintf(f, "NO2 proyectado:   %.2f ug/m3 | AQI: %.0f (%s)\n",
+                    zonas[i].proy.valor.no2,
+                    zonas[i].proy.aqi_no2,
+                    interpretacionAQI(zonas[i].proy.aqi_no2));
+
+            fprintf(f, "CO2 proyectado:   %.0f ppm | %s\n",
+                    zonas[i].proy.valor.co2,
+                    nivelCO2Exterior(zonas[i].proy.valor.co2));
+        } else {
+            fprintf(f, "\nPREDICCIONES:\n");
+            fprintf(f, "No se ha generado prediccion para esta zona.\n");
+        }
 
         fprintf(f, "\n");
     }
 
     fclose(f);
-
-    printf("Reporte exportado correctamente en 'reporte.txt'\n");
+    printf("\nReporte exportado correctamente a 'reporte.txt'\n");
 }
+
+void mostrarDatosActuales(Zona zonas[]) {
+    int hayDatos = 0;
+    for (int i = 0; i < ZONAS; i++) {
+        if (zonas[i].tieneDatos) {
+            hayDatos = 1;
+            break;
+        }
+    }
+
+    if (!hayDatos) {
+        printf("\n No existen datos actuales registrados.\n");
+        return;
+    }
+
+    printf("\n================ DATOS ACTUALES =================\n");
+    printf("Zona               PM2.5   SO2     NO2     CO2   Temp  Viento  Humedad\n");
+    printf("-----------------------------------------------------------------------\n");
+
+    for (int i = 0; i < ZONAS; i++) {
+
+        if (!zonas[i].tieneDatos)
+            continue;   
+
+        Contaminacion c = zonas[i].actual;  
+
+        printf("%s\t\t%.1f\t%.1f\t%.1f\t%.0f\t%.1f\t%.1f\t%.1f\n",
+       zonas[i].nombre,
+       c.pm25,
+       c.so2,
+       c.no2,
+       c.co2,
+       zonas[i].clima.temperatura,
+       zonas[i].clima.viento,
+       zonas[i].clima.humedad);
+
+    }
+
+    printf("=================================================\n");
+}
+
+
 
 
