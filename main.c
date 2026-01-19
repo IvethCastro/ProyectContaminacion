@@ -11,15 +11,16 @@ int main() {
 
     do {
         printf("\n================ MENU =================\n");
-        printf("1. Ingresar y Monitoreo contaminacion actual\n");
+        printf("1. Ingresar datos y Monitoreo contaminacion actual\n");
         printf("2. Proyeccion de contaminacion (24h)\n");
         printf("3. Alertas y recomendaciones\n");
         printf("4. Promedios historicos (30 dias)\n");
         printf("5. Exportar reporte\n");
+        printf("6. Mostrar datos actuales\n");
         printf("0. Salir\n");
         printf("======================================\n");
         printf("Seleccione una opcion: ");
-        opcion = leerEnteroConRango(0, 5);
+        opcion = leerEnteroConRango(0, 6);
 
         switch (opcion) {
 
@@ -28,10 +29,8 @@ int main() {
                 break;
 
             case 2:
-                mostrarZonas(zonas);
-                printf("Ingrese ID de la zona: ");
-                id = leerEnteroConRango(0, ZONAS - 1);
-                prediccion(zonas, id);
+                
+                prediccion(zonas);
                 break;
 
             case 3:
@@ -45,7 +44,9 @@ int main() {
             case 5:
                 exportarReporte(zonas);
                 break;
-
+            case 6:
+                mostrarDatosActuales(zonas);
+                break;
             case 0:
                 printf("Saliendo del sistema...\n");
                 break;
@@ -58,3 +59,4 @@ int main() {
 
     return 0;
 }
+
