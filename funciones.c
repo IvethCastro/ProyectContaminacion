@@ -137,7 +137,7 @@ void anadirZona(Zona zonas[], int *totalZonas) {
 
     char nombre[40];
 
-    printf("\n============= AÑADIR ZONA =============\n");
+    printf("------------AÑADIR ZONA---------------\n");
 
     do {
         printf("Ingrese el nombre de la nueva zona de Quito: ");
@@ -157,7 +157,7 @@ void anadirZona(Zona zonas[], int *totalZonas) {
     zonas[*totalZonas].tieneDatos = 0;
     zonas[*totalZonas].tieneClima = 0;
 
-    printf("\nZona añadida correctamente.\n");
+    printf("\nZona anadida correctamente.\n");
     printf("ID asignado: %d\n", *totalZonas);
 
     (*totalZonas)++;
@@ -261,7 +261,7 @@ void monitoreoActual(Zona *z) {
 }
 
 
-/* ================= PREDICCIÓN ================= */
+/*--------------PREDICCIÓN-------------- */
 
 float promedioPonderado(float valores[]) {
     float pesos[10] = {0.20,0.15,0.12,0.10,0.09,0.08,0.07,0.07,0.06,0.06};
@@ -356,24 +356,24 @@ void prediccion(Zona zonas[], int totalZonas) {
         co2[i]  = zonas[id].historial.dias[i].co2;
     }
 
-    /* === 3. PROMEDIO PONDERADO (ÚLTIMOS 10 DÍAS) === */
+    /* ---------3. PROMEDIO PONDERADO (ÚLTIMOS 10 DÍAS)----- */
     float pm25_pond = promedioPonderado(pm25);
     float so2_pond  = promedioPonderado(so2);
     float no2_pond  = promedioPonderado(no2);
     float co2_pond  = promedioPonderado(co2);
 
-    /* === 4. PROYECCIÓN AJUSTADA POR CLIMA === */
+    /*-----------4. PROYECCIÓN AJUSTADA POR CLIMA---------*/
     zonas[id].proy.valor.pm25 = pm25_pond * fc;
     zonas[id].proy.valor.so2  = so2_pond  * fc;
     zonas[id].proy.valor.no2  = no2_pond  * fc;
     zonas[id].proy.valor.co2  = co2_pond  * fc;
 
-    /* === 5. AQI === */
+    /*------------- 5. AQI-------------------- */
     zonas[id].proy.aqi_pm25 = aqiPM25(zonas[id].proy.valor.pm25);
     zonas[id].proy.aqi_so2  = aqiSO2(zonas[id].proy.valor.so2);
     zonas[id].proy.aqi_no2  = aqiNO2(zonas[id].proy.valor.no2);
 
-    /* === 6. IMPRESIÓN === */
+    /* ---------------6. IMPRESIÓN---------------- */
     printf("\nPROYECCION DE CONTAMINACION - %s\n", zonas[id].nombre);
     printf("Contaminante   Proyeccion (concentracion)       Resultado (AQI)\n");
     printf("------------------------------------------------------------\n");
@@ -418,9 +418,9 @@ void alertasRecomendaciones(Zona zonas[], int totalZonas) {
         if(zonas[i].proy.valor.co2>420) hayAlerta=1;
         if(!hayAlerta) continue;
 
-        printf("\n================================\n");
+        printf("----------------------------------\n");
         printf("Zona: %s\n", zonas[i].nombre);
-        printf("================================\n");
+        printf("----------------------------------\n");
 
         // -------- PM2.5 --------
         if(zonas[i].proy.aqi_pm25>100){
@@ -446,7 +446,7 @@ void alertasRecomendaciones(Zona zonas[], int totalZonas) {
             printf("- Global: Reducir circulacion vehicular.\n");
             printf("- Cultural: Realizar movilidad sostenible.\n");
             printf("- Social: Evitar ejercicio al aire libre.\n");
-            printf("- Ambiental: Mejorar ventilación urbana.\n\n");
+            printf("- Ambiental: Mejorar ventilacion urbana.\n\n");
         }
 
         // -------- CO2 --------
@@ -598,6 +598,7 @@ void mostrarDatosActuales(Zona zonas[], int totalZonas) {
 
     printf("=================================================\n");
 }
+
 
 
 
