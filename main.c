@@ -2,60 +2,72 @@
 #include "funciones.h"
 
 int main() {
-    Zona zonas[ZONAS];
+    Zona zonas[MAX_ZONAS];
+    int totalZonas = 0;
     int opcion;
-    int id;
-
-    inicializarZonas(zonas);
-    cargarDatosHistoricos(zonas);
+    
+    cargarZonas(zonas, &totalZonas);
+    cargarDatosHistoricos(zonas, totalZonas);
 
     do {
-        printf("\n================ MENU =================\n");
-        printf("1. Ingresar datos y Monitoreo contaminacion actual\n");
-        printf("2. Proyeccion de contaminacion (24h)\n");
-        printf("3. Alertas y recomendaciones\n");
-        printf("4. Promedios historicos (30 dias)\n");
-        printf("5. Exportar reporte\n");
-        printf("6. Mostrar datos actuales\n");
-        printf("0. Salir\n");
-        printf("======================================\n");
+        
+        printf("\n========= SISTEMA DE MONITOREO AMBIENTAL - QUITO =========\n");
+        printf("1. Mostrar zonas\n");
+        printf("2. Añadir zona\n");
+        printf("3. Ingresar datos y Monitoreo contaminacion actual\n");
+        printf("4. Mostrar datos actuales\n");
+        printf("5. Proyeccion de contaminacion (24h)\n");
+        printf("6. Alertas y recomendaciones\n");
+        printf("7. Promedios historicos (30 dias) \n");
+        printf("8. Exportar reporte\n");
+        printf("9. Salir\n");
         printf("Seleccione una opcion: ");
-        opcion = leerEnteroConRango(0, 6);
 
-        switch (opcion) {
+        opcion = leerEnteroConRango(1, 9);
+
+        switch(opcion){
 
             case 1:
-                ingresarContaminacionActual(zonas);
+                mostrarZonas(zonas, totalZonas);
                 break;
 
             case 2:
-                
-                prediccion(zonas);
+                anadirZona(zonas, &totalZonas);
                 break;
 
             case 3:
-                alertasRecomendaciones(zonas);
+                ingresarContaminacionActual(zonas, totalZonas);
                 break;
 
             case 4:
-                promediosHistoricos(zonas);
+                mostrarDatosActuales(zonas, totalZonas);
                 break;
 
             case 5:
-                exportarReporte(zonas);
+                prediccion(zonas, totalZonas);
                 break;
+
             case 6:
-                mostrarDatosActuales(zonas);
+                alertasRecomendaciones(zonas, totalZonas);
                 break;
-            case 0:
-                printf("Saliendo del sistema...\n");
+
+            case 7:
+                promediosHistoricos(zonas, totalZonas);
+                break;
+
+            case 8:
+                exportarReporte(zonas, totalZonas);
+                break;
+
+            case 9:
+                printf("\nSaliendo del sistema...\n");
                 break;
 
             default:
                 printf("Opcion invalida.\n");
         }
 
-    } while (opcion != 0);
+    } while (opcion != 9);
 
     return 0;
 }
