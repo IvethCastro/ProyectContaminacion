@@ -11,7 +11,6 @@
 #define MAX_ZONAS 20
 
 
-
 typedef struct {
     float pm25;
     float so2;
@@ -52,19 +51,15 @@ int leerEnteroConRango(int inicio, int fin);
 float leerFlotanteConRango(float inicio, float fin);
 int soloLetras(char *cadena);
 
-
 void mostrarZonas(Zona zonas[], int totalZonas);
 void anadirZona(Zona zonas[], int *totalZonas);
-
 
 void cargarDatosHistoricos(Zona zonas[], int totalZonas);
 void guardarDatosHistoricos(Zona zonas[], int totalZonas);
 void cargarZonas(Zona zonas[], int *totalZonas);
 
-
 void ingresarContaminacionActual(Zona zonas[], int totalZonas);
 void mostrarDatosActuales(Zona zonas[], int totalZonas);
-
 
 
 float promedioPonderado(float valores[]);
