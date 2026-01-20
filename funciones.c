@@ -446,9 +446,9 @@ void alertasRecomendaciones(Zona zonas[], int totalZonas) {
         if(zonas[i].proy.valor.co2>420) hayAlerta=1;
         if(!hayAlerta) continue;
 
-        printf("\n================================\n");
+        printf("--------------------------------\n");
         printf("Zona: %s\n", zonas[i].nombre);
-        printf("================================\n");
+        printf("---------------------------------\n");
 
         // -------- PM2.5 --------
         if(zonas[i].proy.aqi_pm25>100){
@@ -526,9 +526,9 @@ void exportarReporte(Zona zonas[], int totalZonas) {
         return;
     }
 
-    fprintf(f, "=============================================\n");
+    fprintf(f, "-------------------------------------------------\n");
     fprintf(f, "   REPORTE DE CALIDAD DEL AIRE - QUITO\n");
-    fprintf(f, "=============================================\n\n");
+    fprintf(f, "-------------------------------------------------\n\n");
 
     for (int i = 0; i < totalZonas; i++) {
 
@@ -601,7 +601,7 @@ void mostrarDatosActuales(Zona zonas[], int totalZonas) {
         return;
     }
 
-    printf("\n================ DATOS ACTUALES =================\n");
+    printf("--------------------DATOS ACTUALES--------------------------\n");
     printf("Zona               PM2.5   SO2     NO2     CO2   Temp  Viento  Humedad\n");
     printf("-----------------------------------------------------------------------\n");
 
@@ -624,8 +624,9 @@ void mostrarDatosActuales(Zona zonas[], int totalZonas) {
 
     }
 
-    printf("=================================================\n");
+    printf("---------------------------------------------\n");
 }
+
 
 
 
