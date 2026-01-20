@@ -43,26 +43,18 @@ int soloLetras(char *cadena){
     return 1;
 }
 
-
-void guardarZonas(Zona zonas[], int totalZonas) {
-    FILE *f = fopen("zonas.dat", "wb");
-    if (f == NULL) {
-        printf("Error al guardar zonas.\n");
-        return;
-    }
-
-    fwrite(&totalZonas, sizeof(int), 1, f);
-    fwrite(zonas, sizeof(Zona), totalZonas, f);
-
+void guardarZonas(Zona zonas[], int totalZonas){
+    FILE *f = fopen("zonas.dat","wb");
+    fwrite(&totalZonas,sizeof(int),1,f);
+    fwrite(zonas,sizeof(Zona),totalZonas,f);
     fclose(f);
 }
 
-void cargarZonas(Zona zonas[], int *totalZonas) {
-    FILE *f = fopen("zonas.dat", "rb");
+void cargarZonas(Zona zonas[], int *totalZonas){
+    FILE *f = fopen("zonas.dat","rb");
 
-    if (f == NULL) {
-        // NO existe el archivo → crear zonas iniciales
-        char nombres[5][40] = {
+    if(!f){
+        char nombres[5][40]={
             "Centro Historico",
             "Valle de los Chillos",
             "Chillogallo",
@@ -70,21 +62,27 @@ void cargarZonas(Zona zonas[], int *totalZonas) {
             "La Carolina"
         };
 
-        for (int i = 0; i < 5; i++) {
-            strcpy(zonas[i].nombre, nombres[i]);
-            zonas[i].hayPrediccion = 0;
-            zonas[i].tieneDatos = 0;
-            zonas[i].tieneClima = 0;
-        }
+        *totalZonas=5;
+        for(int i=0;i<5;i++){
+            strcpy(zonas[i].nombre,nombres[i]);
+            zonas[i].hayPrediccion=0;
+            zonas[i].tieneDatos=0;
+            zonas[i].tieneClima=0;
 
-        *totalZonas = 5;
-        guardarZonas(zonas, *totalZonas);
+            for(int d=0;d<DIAS;d++){
+                zonas[i].historial.dias[d].pm25=12+i;
+                zonas[i].historial.dias[d].so2=20+i;
+                zonas[i].historial.dias[d].no2=35+i;
+                zonas[i].historial.dias[d].co2=420+i*5;
+            }
+        }
+        guardarZonas(zonas,*totalZonas);
+        guardarDatosHistoricos(zonas,*totalZonas);
         return;
     }
 
-    fread(totalZonas, sizeof(int), 1, f);
-    fread(zonas, sizeof(Zona), *totalZonas, f);
-
+    fread(totalZonas,sizeof(int),1,f);
+    fread(zonas,sizeof(Zona),*totalZonas,f);
     fclose(f);
 }
 
@@ -97,12 +95,11 @@ void mostrarZonas(Zona zonas[], int totalZonas){
 
 void guardarDatosHistoricos(Zona zonas[], int totalZonas){
     FILE *f = fopen("historico.dat", "wb");
-
-    if(f == NULL){
+    if(!f){
         printf("Error al guardar archivo historico\n");
         return;
     }
-
+    fwrite(&totalZonas, sizeof(int), 1, f);
     fwrite(zonas, sizeof(Zona), totalZonas, f);
     fclose(f);
 }
@@ -112,20 +109,39 @@ void cargarDatosHistoricos(Zona zonas[], int totalZonas){
     FILE *f = fopen("historico.dat", "rb");
 
     if(f == NULL){
+        // No existe archivo → inicializar todo
         for(int i = 0; i < totalZonas; i++){
             for(int j = 0; j < DIAS; j++){
-                zonas[i].historial.dias[j].pm25 = 12 + i;
-                zonas[i].historial.dias[j].so2  = 20 + i;
-                zonas[i].historial.dias[j].no2  = 35 + i;
-                zonas[i].historial.dias[j].co2  = 420 + i * 10;
+                zonas[i].historial.dias[j].pm25 = 10 + j % 5;
+                zonas[i].historial.dias[j].so2  = 20 + j % 4;
+                zonas[i].historial.dias[j].no2  = 30 + j % 6;
+                zonas[i].historial.dias[j].co2  = 420 + j;
             }
         }
         guardarDatosHistoricos(zonas, totalZonas);
-    } else {
-        fread(zonas, sizeof(Zona), totalZonas, f);
-        fclose(f);
+        return;
     }
+
+    int zonasArchivo;
+    fread(&zonasArchivo, sizeof(int), 1, f);
+
+    int min = zonasArchivo < totalZonas ? zonasArchivo : totalZonas;
+    fread(zonas, sizeof(Zona), min, f);
+    fclose(f);
+
+    /* Inicializar historial SOLO para zonas nuevas */
+    for(int i = zonasArchivo; i < totalZonas; i++){
+        for(int j = 0; j < DIAS; j++){
+            zonas[i].historial.dias[j].pm25 = 8 + j % 4;
+            zonas[i].historial.dias[j].so2  = 18 + j % 3;
+            zonas[i].historial.dias[j].no2  = 25 + j % 5;
+            zonas[i].historial.dias[j].co2  = 415 + j;
+        }
+    }
+
+    guardarDatosHistoricos(zonas, totalZonas);
 }
+
 
 
 void anadirZona(Zona zonas[], int *totalZonas) {
@@ -137,7 +153,7 @@ void anadirZona(Zona zonas[], int *totalZonas) {
 
     char nombre[40];
 
-    printf("------------AÑADIR ZONA---------------\n");
+    printf("\n============= AÑADIR ZONA =============\n");
 
     do {
         printf("Ingrese el nombre de la nueva zona de Quito: ");
@@ -151,19 +167,31 @@ void anadirZona(Zona zonas[], int *totalZonas) {
 
     } while (!soloLetras(nombre));
 
+    /* ===== NOMBRE ===== */
     strcpy(zonas[*totalZonas].nombre, nombre);
 
+    /* ===== INICIALIZAR HISTORIAL (30 DÍAS) ===== */
+    for (int d = 0; d < DIAS; d++) {
+        zonas[*totalZonas].historial.dias[d].pm25 = 8 + d % 4;   // 8 – 11 ug/m3
+        zonas[*totalZonas].historial.dias[d].so2  = 18 + d % 3;  // 18 – 20 ug/m3
+        zonas[*totalZonas].historial.dias[d].no2  = 25 + d % 5;  // 25 – 29 ug/m3
+        zonas[*totalZonas].historial.dias[d].co2  = 415 + d;    // 415 – 444 ppm
+    }
+
+    /* ===== FLAGS ===== */
     zonas[*totalZonas].hayPrediccion = 0;
     zonas[*totalZonas].tieneDatos = 0;
     zonas[*totalZonas].tieneClima = 0;
 
-    printf("\nZona anadida correctamente.\n");
+    printf("\nZona añadida correctamente.\n");
     printf("ID asignado: %d\n", *totalZonas);
 
     (*totalZonas)++;
 
     guardarZonas(zonas, *totalZonas);
+    guardarDatosHistoricos(zonas, *totalZonas);
 }
+
 
 
 
@@ -261,7 +289,7 @@ void monitoreoActual(Zona *z) {
 }
 
 
-/*--------------PREDICCIÓN-------------- */
+
 
 float promedioPonderado(float valores[]) {
     float pesos[10] = {0.20,0.15,0.12,0.10,0.09,0.08,0.07,0.07,0.06,0.06};
@@ -356,24 +384,24 @@ void prediccion(Zona zonas[], int totalZonas) {
         co2[i]  = zonas[id].historial.dias[i].co2;
     }
 
-    /* ---------3. PROMEDIO PONDERADO (ÚLTIMOS 10 DÍAS)----- */
+    /* === 3. PROMEDIO PONDERADO (ÚLTIMOS 10 DÍAS) === */
     float pm25_pond = promedioPonderado(pm25);
     float so2_pond  = promedioPonderado(so2);
     float no2_pond  = promedioPonderado(no2);
     float co2_pond  = promedioPonderado(co2);
 
-    /*-----------4. PROYECCIÓN AJUSTADA POR CLIMA---------*/
+    /* === 4. PROYECCIÓN AJUSTADA POR CLIMA === */
     zonas[id].proy.valor.pm25 = pm25_pond * fc;
     zonas[id].proy.valor.so2  = so2_pond  * fc;
     zonas[id].proy.valor.no2  = no2_pond  * fc;
     zonas[id].proy.valor.co2  = co2_pond  * fc;
 
-    /*------------- 5. AQI-------------------- */
+    /* === 5. AQI === */
     zonas[id].proy.aqi_pm25 = aqiPM25(zonas[id].proy.valor.pm25);
     zonas[id].proy.aqi_so2  = aqiSO2(zonas[id].proy.valor.so2);
     zonas[id].proy.aqi_no2  = aqiNO2(zonas[id].proy.valor.no2);
 
-    /* ---------------6. IMPRESIÓN---------------- */
+    /* === 6. IMPRESIÓN === */
     printf("\nPROYECCION DE CONTAMINACION - %s\n", zonas[id].nombre);
     printf("Contaminante   Proyeccion (concentracion)       Resultado (AQI)\n");
     printf("------------------------------------------------------------\n");
@@ -418,9 +446,9 @@ void alertasRecomendaciones(Zona zonas[], int totalZonas) {
         if(zonas[i].proy.valor.co2>420) hayAlerta=1;
         if(!hayAlerta) continue;
 
-        printf("----------------------------------\n");
+        printf("\n================================\n");
         printf("Zona: %s\n", zonas[i].nombre);
-        printf("----------------------------------\n");
+        printf("================================\n");
 
         // -------- PM2.5 --------
         if(zonas[i].proy.aqi_pm25>100){
@@ -446,7 +474,7 @@ void alertasRecomendaciones(Zona zonas[], int totalZonas) {
             printf("- Global: Reducir circulacion vehicular.\n");
             printf("- Cultural: Realizar movilidad sostenible.\n");
             printf("- Social: Evitar ejercicio al aire libre.\n");
-            printf("- Ambiental: Mejorar ventilacion urbana.\n\n");
+            printf("- Ambiental: Mejorar ventilación urbana.\n\n");
         }
 
         // -------- CO2 --------
